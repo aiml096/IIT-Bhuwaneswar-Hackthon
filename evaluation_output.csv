@@ -1,0 +1,3 @@
+Query Id,Query,Query Category,System Output,Remarks
+1,Order delivered but not received,Delivery Investigation,"The order was marked as delivered, but the customer reported non-receipt and a delivery investigation was initiated.",6794-8660-4606-3216;3240-6559-2310-6416;9295-7772-7972-4826
+2,Payment deducted twice,Business Event - System Outage,Relevant information was found in the retrieved transcripts.,6492-5065-6070-9460;9359-6019-1904-3384;2801-2594-6373-6835
