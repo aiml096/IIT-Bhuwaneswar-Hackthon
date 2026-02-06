@@ -1,4 +1,4 @@
-# **🏆 PRAVAAH TECHNICAL REPORT - 1ST PRIZE** 🥇
+# ** PRAVAAH TECHNICAL REPORT ** 
 
 **IIT Bhubaneswar PRAVAAH Hackathon 2026**  
 **Causal Conversation Analysis System**  
@@ -295,7 +295,7 @@ result = analyzer.query("Why escalations?")
 
 ***
 
-**Prepared by**: V3
+**Prepared by**: V3,
 **Institution**: IIT Bhubaneswar  
 **Hackathon**: PRAVAAH 2026  
 **Date**: February 07, 2026
