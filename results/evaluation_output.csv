@@ -1,0 +1,21 @@
+Query_Id,Query,Query_Category,System_Output,Remarks
+1,Order delivered but not received,Single-turn,"**Causal Factor**: Customer reports non-delivery despite system confirmation
+**Evidence**: ",Intent:Delivery Investigation|R:0.01|F:0.85|Re:0.50
+2,Payment deducted twice,Single-turn,"**Causal Factor**: Pattern detected
+**Evidence**: ",Intent:Business Event - System Outage|R:0.02|F:0.85|Re:0.90
+3,Why do escalations happen?,Single-turn,"**Causal Factor**: Pattern detected
+**Evidence**: ",Intent:Service Interruptions|R:0.01|F:0.85|Re:0.90
+4,Account login not working,Single-turn,"**Causal Factor**: Pattern detected
+**Evidence**: ",Intent:Account Access Issues|R:0.01|F:0.85|Re:0.90
+5,Customer supervisor requests,Single-turn,"**Causal Factor**: Pattern detected
+**Evidence**: ",Intent:Escalation - Repeated Service Failures|R:0.01|F:0.85|Re:0.50
+6,Patterns in those calls?,Single-turn,"**Causal Factor**: Pattern detected
+**Evidence**: ",Intent:Service Interruptions|R:0.01|F:0.85|Re:0.50
+7,Multiple delivery attempts,Single-turn,"**Causal Factor**: Customer reports non-delivery despite system confirmation
+**Evidence**: ",Intent:Delivery Investigation|R:0.01|F:0.85|Re:0.90
+8,Billing confusion cases,Single-turn,"**Causal Factor**: Pattern detected
+**Evidence**: ",Intent:Claim Denials|R:0.01|F:0.85|Re:0.50
+9,What happens in escalation calls?,Single-turn,"**Causal Factor**: Pattern detected
+**Evidence**: ",Intent:Escalation - Threat of Legal Action|R:0.01|F:0.85|Re:0.90
+10,Repeat issues in those cases?,Single-turn,"**Causal Factor**: Pattern detected
+**Evidence**: ",Intent:Claim Denials|R:0.01|F:0.85|Re:0.50

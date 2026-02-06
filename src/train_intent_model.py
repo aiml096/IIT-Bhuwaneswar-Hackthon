@@ -1,43 +1,85 @@
-import json, pickle
+import torch
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from torch.utils.data import Dataset, DataLoader
+import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, f1_score
+import json
+import os
 
-with open("data/transcripts.json", "r", encoding="utf-8") as f:
-    transcripts = json.load(f)["transcripts"]
+class CausalDataset(Dataset):
+    def __init__(self, texts, labels, tokenizer, max_length=128):
+        self.encodings = tokenizer(
+            texts, truncation=True, padding=True, 
+            max_length=max_length, return_tensors='pt'
+        )
+        self.labels = torch.tensor(labels)
+    
+    def __len__(self): return len(self.labels)
+    def __getitem__(self, idx):
+        item = {key: val[idx] for key, val in self.encodings.items()}
+        item['labels'] = self.labels[idx]
+        return item
 
-texts, labels = [], []
+def load_transcripts(json_path):
+    with open(json_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    return data.get('transcripts', [])
 
-for t in transcripts:
-    texts.append(" ".join(turn["text"] for turn in t["conversation"]))
-    labels.append(t["intent"])
+def create_weak_labels(transcripts):
+    causal_keywords = ['supervisor', 'manager', 'weeks', 'not received', 
+                      'multiple times', 'complaint', 'cancel', 'failed']
+    
+    labeled_turns = []
+    for transcript in transcripts[:500]:  # Fast training
+        for turn in transcript.get('conversation', []):
+            text = turn['text'].lower()
+            label = 1 if any(kw in text for kw in causal_keywords) else 0
+            labeled_turns.append({'text': turn['text'], 'label': label})
+    
+    return pd.DataFrame(labeled_turns)
 
-X_train, X_test, y_train, y_test = train_test_split(
-    texts, labels, test_size=0.2, stratify=labels, random_state=42
+print("🔄 Loading data...")
+transcripts = load_transcripts("Conversational_Transcript_Dataset.json")
+df = create_weak_labels(transcripts)
+
+print(f"📊 {len(df)} turns, {df['label'].sum()} causal")
+
+# Train/val split
+train_df, val_df = train_test_split(df, test_size=0.2, random_state=42)
+tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
+model = AutoModelForSequenceClassification.from_pretrained(
+    "distilbert-base-uncased", num_labels=2
 )
 
-vectorizer = TfidfVectorizer(
-    ngram_range=(1,2),
-    max_features=5000,
-    stop_words="english"
-)
+# Datasets
+train_dataset = CausalDataset(train_df['text'].tolist(), train_df['label'].tolist(), tokenizer)
+val_dataset = CausalDataset(val_df['text'].tolist(), val_df['label'].tolist(), tokenizer)
 
-X_train_vec = vectorizer.fit_transform(X_train)
-X_test_vec = vectorizer.transform(X_test)
+train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=8)
 
-model = LogisticRegression(max_iter=1000)
-model.fit(X_train_vec, y_train)
+# Training (NO Trainer class - pure PyTorch)
+optimizer = torch.optim.AdamW(model.parameters(), lr=2e-5)
+model.train()
 
-y_pred = model.predict(X_test_vec)
+print("🚀 Training BERT (2 epochs, ~2min)...")
+for epoch in range(2):
+    total_loss = 0
+    for i, batch in enumerate(train_loader):
+        optimizer.zero_grad()
+        outputs = model(**batch)
+        loss = outputs.loss
+        loss.backward()
+        optimizer.step()
+        total_loss += loss.item()
+        
+        if i % 20 == 0:
+            print(f"Epoch {epoch+1}, Batch {i}, Loss: {loss.item():.3f}")
+    
+    print(f"✅ Epoch {epoch+1} complete: avg_loss={total_loss/len(train_loader):.3f}")
 
-print("Accuracy:", accuracy_score(y_test, y_pred))
-print("Macro-F1:", f1_score(y_test, y_pred, average="macro"))
-
-with open("models/intent_model.pkl", "wb") as f:
-    pickle.dump(model, f)
-
-with open("models/vectorizer.pkl", "wb") as f:
-    pickle.dump(vectorizer, f)
-
-print("Saved intent_model.pkl and vectorizer.pkl")
+# Save
+os.makedirs("models/bert_causal", exist_ok=True)
+model.save_pretrained("models/bert_causal")
+tokenizer.save_pretrained("models/bert_causal")
+print("🎉 BERT causal classifier SAVED to models/bert_causal/")
